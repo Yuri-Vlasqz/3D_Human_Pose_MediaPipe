@@ -5,11 +5,11 @@ import numpy as np
 import json
 
 
-def get_panoptic_parameters(cam_list: list, seq_name: str = '171026_pose3'):
+def get_panoptic_parameters(cam_list: list, directory: str = "Dataset/Panoptic/", seq_name: str = '171026_pose3'):
     """get a selected list of HD camera parameters (intrinsic and extrinsic)"""
 
     # Load camera calibration parameters (for visualizing cameras)
-    with open(f'Dataset/Panoptic/{seq_name}/calibration_{seq_name}.json') as cfile:
+    with open(f'{directory}{seq_name}/calibration_{seq_name}.json') as cfile:
         calib = json.load(cfile)
 
     # Cameras are identified by a tuple of (panel#,node#)
@@ -36,5 +36,8 @@ def get_panoptic_parameters(cam_list: list, seq_name: str = '171026_pose3'):
 
     return rotational_matrices, translation_vectors, camera_matrices, camera_distortions
 
-# test
-# get_panoptic_parameters([0, 10, 20, 30], '171026_pose3')
+
+if __name__ == "__main__":
+    # test
+    get_panoptic_parameters([0, 10, 20, 30], directory="", seq_name='171026_pose3')
+    print("--------------------------")
