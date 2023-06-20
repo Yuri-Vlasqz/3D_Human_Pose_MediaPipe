@@ -114,7 +114,7 @@ class Pose3D:
             pose_3d_pair = self.cv2_3d_pose_pair(pair=[i, j], poses=all_2d_poses)
             # List o minimum visibility of the pair in each joint
             min_visibility_pair = [min(joint1['visibility'], joint2['visibility'])
-                                   for joint1, joint2 in zip(all_2d_poses[i], all_2d_poses[i])]
+                                   for joint1, joint2 in zip(all_2d_poses[i], all_2d_poses[j])]
             all_min_vis.append(min_visibility_pair)
             all_3d_poses.append(pose_3d_pair)
 
