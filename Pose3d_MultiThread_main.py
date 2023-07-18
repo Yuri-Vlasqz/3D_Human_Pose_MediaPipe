@@ -13,10 +13,6 @@ from Dataset.DELED_RTSP_Cameras.Intrinsic_parameters import get_deled_intrinsics
 
 # Global Variables =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define RTSP camera URLs
-# cam_urls = ['Dataset/single_person/1.mp4',
-#             'Dataset/single_person/5.mp4',
-#             'Dataset/single_person/13.mp4',
-#             'Dataset/single_person/21.mp4']
 cam_urls = ['Dataset/Panoptic/171026_pose3/hdVideos/hd_00_00.mp4',
             'Dataset/Panoptic/171026_pose3/hdVideos/hd_00_01.mp4',
             'Dataset/Panoptic/171026_pose3/hdVideos/hd_00_06.mp4',
@@ -83,13 +79,6 @@ def process_feed(feed, pose_2d, frame_limits: list, index: int, distorted_feed: 
 
     # Loop over the frames from one camera =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     while True:
-        # wait on all other threads to complete
-        # sync_frame_start.wait()
-        # try:
-        #     sync_frame_start.wait()
-        # except threading.BrokenBarrierError:
-        #     print("BrokenBarrierError")
-        #     break
         # Read a frame from the camera
         ret, frame = feed.read()
 
@@ -156,19 +145,11 @@ all_mp_poses = [MpPose2D() for _ in captures]
 
 # Camera parameters =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-# single person
-# rotational_matrices, translation_vectors, camera_matrices, camera_distortions = get_all_camera_parameters()
-# distorted = False
-
 # Panoptic
 rotational_matrices, translation_vectors, camera_matrices, camera_distortions = get_panoptic_parameters(
     [0, 1, 6, 13, 16, 21]
 )
 distorted = False
-
-# DELED RTSP
-# dist_cameras_mats, undist_cameras_mats, cameras_dists_coeff, cameras_roi = get_deled_intrinsics()
-# distorted = True
 
 # Create 3d pose object =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 pose_3d = Pose3D(camera_mats=camera_matrices,
@@ -188,16 +169,13 @@ axes = pose_3d.create_3d_space()
 # Thread synchronization primitive (to make code thread safe)
 thread_lock = threading.Lock()
 
-# Create a thread pool and submit a task for each camera cam
+# Cameras Thread pool
 with concurrent.futures.ThreadPoolExecutor() as executor:
     print("\nInitializing threads for processing feeds:")
     for i, cap in enumerate(captures):
-        # if not distorted:
-        #     dist_cameras_mats[i], cameras_dists_coeff[i], undist_cameras_mats[i] = None, None, None
-        # Submit task for each camera cam
+        # Submit task for each camera
         executor.submit(process_feed, cap, all_mp_poses[i], frames_limits[i], i, distorted,
                         None, None, None)
-
         print(f"- Thread {i} for {cap} with {all_mp_poses[i]}")
 
     # Main loop =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -217,45 +195,34 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
 
         # Checking if at least 2 poses are detected
         if n_poses >= 2:
-            # Checking if all frames poses are detected
-            # if all(pose_output_buffer):
+            # Copy and Reset output for new poses
             pose_output = pose_output_buffer.copy()
-
-            # Reset output for new poses
             pose_output_buffer = [None] * len(captures)
 
             start = time.time()
-            # avg_3d_pose = pose_3d.calc_avg_3d_kpt(pose_output)
-            # best_3d_pose = pose_3d.calc_best_3d_kpt(pose_output)
             best_3d_pose = pose_3d.dynamic_best_3d_kpt(pose_output)
             stop = time.time()
-            # print(f"Triangulation time: {round((stop - start) * 1000, 4)} miliseconds")
             all_triangulantion_time_ms.append(stop - start)
 
             start = time.time()
-            # pose_3d.update_3d_pose(avg_3d_pose, axes)
             pose_3d.update_3d_pose(best_3d_pose, axes)
-
             stop = time.time()
-            # print(f"3d draw time: {round((stop - start) * 1000, 4)} miliseconds")
             all_3d_draw_time_ms.append(stop - start)
 
         stop_mosaic_time = time.time()
-
         mosaic_fps = 1 / (stop_mosaic_time - start_mosaic_time)
-        cv2.putText(buffered_mosaic, f"FPS: {mosaic_fps:.0f}", (frame_width - 90, frame_height - 10),
+        cv2.putText(buffered_mosaic, f"FPS: {mosaic_fps:.1f}", (frame_width - 90, frame_height - 10),
                     font, size, (0, 0, 255), 1, line_type)
+        all_mosaic_time.append(stop_mosaic_time - start_mosaic_time)
+        start_mosaic_time = stop_mosaic_time
 
         # Display the frame
         cv2.imshow('Multi-Thread: MediaPipe Pose-3D', buffered_mosaic)
 
-        all_mosaic_time.append(stop_mosaic_time - start_mosaic_time)
-        start_mosaic_time = stop_mosaic_time
-
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    # Stop threads
+    # Stop waiting threads
     sync_pose.abort()
 
 # Performance Report =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -273,5 +240,5 @@ print("mean 3d draw time (ms):\t\t\t",
 print("mean frame time (ms):\t\t\t",
       round((sum(all_mosaic_time) / len(all_mosaic_time))*1000, 3))
 
-# Release video capture objects and close window
+# Close Mosaic window
 cv2.destroyAllWindows()
