@@ -17,6 +17,13 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 
 
 ## Results:
+- Performance Statistics:
+  - mean inference time:&emsp;&emsp;53.2 ms
+  - mean triangulation time:&ensp;1.2 ms
+  - mean 3d draw time:&emsp;&emsp;&ensp;91.6 ms
+  - mean frame time:&emsp;&emsp;&emsp;&ensp;98.8 ms
+  - mean FPS:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;10.1
+
 - *Multiple perspective mosaic overlaid with inference pose*
 ![Multithread_multiview_2d_pose](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/f3533641-1146-4cf5-9a9d-ee9de5413e70)
 
@@ -25,9 +32,3 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 ![3d_pose](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/726285c6-0b8c-49c0-9500-4cbb3f4ca68c)
 
 
-- Performance Statistics:
-  - mean inference time:&emsp;&emsp;53.2 ms
-  - mean triangulation time:&ensp;1.2 ms
-  - mean 3d draw time:&emsp;&emsp;&ensp;91.6 ms
-  - mean frame time:&emsp;&emsp;&emsp;&ensp;106.6 ms
-  - mean FPS:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;9.4
