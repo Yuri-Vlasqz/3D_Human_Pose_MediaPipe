@@ -1,5 +1,5 @@
 # 3D Human Pose MediaPipe
-Multi-Camera Human Pose triangulation, with real-time 3D graph feedback.
+**Multi-Camera Human Pose triangulation, with real-time 3D graph feedback.**
 
 - Main program is multithreaded for performance increase in I/O bound operations, such as, concurrent image aquisition of all IP/RTSP cameras.
 
@@ -17,18 +17,22 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 
 
 ## Results:
-- Performance Statistics:
-  - mean inference time:&emsp;&emsp;53.2 ms
+- **Performance Statistics:**
+  - mean inference time:&emsp;&emsp;&nbsp;53.2 ms
   - mean triangulation time:&ensp;1.2 ms
-  - mean 3d draw time:&emsp;&emsp;&ensp;91.6 ms
-  - mean frame time:&emsp;&emsp;&emsp;&ensp;98.8 ms
+  - mean 3d draw time:&emsp;&emsp;&ensp;&nbsp;91.6 ms
+  - mean frame time:&emsp;&emsp;&emsp;&ensp;&nbsp;98.8 ms
   - mean FPS:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;10.1
+  - MPJPE (4 cameras):&emsp;&emsp;&emsp;&nbsp;50.8 mm (Mean Per Joint Position Error)
+
+
 
 - *Multiple perspective mosaic overlaid with inference pose*
 ![Multithread_multiview_2d_pose](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/f3533641-1146-4cf5-9a9d-ee9de5413e70)
 
 
-- *Triangulated Pose (with camera location as floating points )*
+
+- *Triangulated Pose (with camera location as floating points)*
 ![3d_pose](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/726285c6-0b8c-49c0-9500-4cbb3f4ca68c)
 
 
