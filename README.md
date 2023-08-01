@@ -18,7 +18,7 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 
 ## Results:
 - *Multiple perspective mosaic overlaid with inference pose*
-![Multithread_multiview_2d_pose](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/c53f2afc-be0b-4c6f-bb18-3c136e48a49f)
+![Multithread_multiview_2d_pose](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/f3533641-1146-4cf5-9a9d-ee9de5413e70)
 
 
 - *Triangulated Pose (with camera location as floating points )*
