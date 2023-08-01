@@ -17,7 +17,7 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 
 
 ## Results:
-- **Performance Statistics:**
+- **Performance Statistics[^1]:**
   - mean inference time:&emsp;&emsp;&nbsp;53.2 ms
   - mean triangulation time:&ensp;1.2 ms
   - mean 3d draw time:&emsp;&emsp;&ensp;&nbsp;91.6 ms
@@ -25,6 +25,7 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
   - mean FPS:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;10.1
   - MPJPE (4 cameras):&emsp;&emsp;&emsp;&nbsp;50.8 mm (Mean Per Joint Position Error)
 
+[^1]: Test Machine specification: Ryzen 7 3700X, 16 GB RAM 
 
 
 - *Multiple perspective mosaic overlaid with inference pose*
