@@ -33,6 +33,9 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 
 
 - *Triangulated Pose (with camera location as floating points)*
-![3d_pose](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/726285c6-0b8c-49c0-9500-4cbb3f4ca68c)
+![3d_pose](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/8a1ed460-469b-4980-a08d-5f4948bbb614)
 
+
+- *Dataset ground truth comparison (green: CMU Panoptic, red: 3D Human Pose MediaPipe)*
+![mediapipe vs panoptic GT](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/ce239b2a-0c71-4ef6-859b-b081271c1084)
 
