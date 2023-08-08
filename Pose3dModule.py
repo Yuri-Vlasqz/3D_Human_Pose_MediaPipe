@@ -1,12 +1,10 @@
+import mpl_toolkits.mplot3d.axes3d
 import numpy as np
 import mediapipe as mp
 import cv2
 from itertools import combinations
 import matplotlib.pyplot as plt
-
-
-# from mpl_toolkits.mplot3d import Axes3D
-# from mpl_toolkits.mplot3d.art3d import Line3DCollection
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 
 class MpPose2D:
@@ -113,6 +111,7 @@ class Pose3D:
 
         return euclid_points_3d
 
+    # --- Triangulation by average ---
     def calc_avg_3d_kpt(self, all_2d_poses):
         # all_3d_poses = np.empty([len(), len()], dtype=np.ndarray)
         all_3d_poses = []
@@ -149,26 +148,7 @@ class Pose3D:
 
         return avg_3d_pose[0]
 
-    def calc_best_3d_kpt(self, all_2d_poses):
-        all_3d_poses = []
-        all_min_vis = []
-        for i, j in self.pairs:
-            # triangulate 3d points per camera pair
-            pose_3d_pair = self.cv2_3d_pose_pair(pair=[i, j], poses=all_2d_poses)
-            # list o minimum visibility of the pair in each joint
-            min_visibility_pair = [min(joint1['visibility'], joint2['visibility'])
-                                   for joint1, joint2 in zip(all_2d_poses[i], all_2d_poses[j])]
-            all_min_vis.append(min_visibility_pair)
-            all_3d_poses.append(pose_3d_pair)
-
-        # Finding array/pose index with best visisibility in all all_min_vis
-        best_pair_idx = np.array(all_min_vis).argmax(axis=0)
-        # best 3d pose
-        best_3d_pose = [all_3d_poses[pair_idx][joint_idx, 0]
-                        for joint_idx, pair_idx in enumerate(best_pair_idx)]
-
-        return np.array(best_3d_pose)
-
+    # --- Triangulation by best ---
     def dynamic_best_3d_kpt(self, all_2d_poses):
         all_3d_poses = []
         all_min_vis = []
@@ -192,73 +172,81 @@ class Pose3D:
 
         return np.array(best_3d_pose)
 
-    def create_3d_space(self):
-        camera_positions = self.T_vecs
-        camera_orientations = self.R_mats
+    # --- 3D graph functions ---
+    def create_3d_space(self, unit='cm', xlim=(-200, 200), ylim=(0, -400), zlim=(-200, 200),
+                        color='r', focal_len_scaled=50, aspect_ratio=0.3) -> mpl_toolkits.mplot3d.axes3d.Axes3D:
+        """
+        :param unit: axes measurement unit
+        :param xlim: x axis limits 
+        :param ylim: y axis limits 
+        :param zlim: z axis limits
+        :param color: cameras color
+        :param focal_len_scaled: cameras scale
+        :param aspect_ratio: cameras aperture
+        :return: ax – 3D plot
+        """
+
         # Create a new 3D plot
-        fig = plt.figure()
+        fig = plt.figure(figsize=(7, 7))
         ax = fig.add_subplot(111, projection='3d')
-        ax.view_init(elev=-30, azim=180, roll=-90)  # elev=90, azim=-90
+        ax.view_init(elev=-30, azim=170, roll=-85)  # elev=90, azim=-90
         # ax.set_proj_type('persp', focal_length=0.2)  # FOV = 157.4 deg
-        # Set labels for the axes
-        # ax.set_xlabel('X')
-        # ax.set_ylabel('Y')
-        # ax.set_zlabel('Z')
 
-        # set axes ticks (single person in meters)
-        # ax.set_xlabel('X (m)')
-        # ax.set_ylabel('Y (m)')
-        # ax.set_zlabel('Z (m)')
-        # ax.set_xticks(range(-2, 3))
-        # ax.set_yticks(range(-2, 3))
-        # ax.set_zticks(range(0, 5))
-        # # Set limits for the x, y, and z axes
-        # ax.set_xlim((-2, 2))
-        # ax.set_ylim((-2, 2))
-        # ax.set_zlim((0, 4))
+        # Set labels for the axes (Panoptic in centimeters, DELED in milimeters)
+        ax.set_xlabel(f'X {unit}')
+        ax.set_ylabel(f'Y {unit}')
+        ax.set_zlabel(f'Z {unit}')
 
-        # set axes ticks (Panoptic in centimeters)
-        ax.set_xlabel('X (cm)')
-        ax.set_ylabel('Y (cm)')
-        ax.set_zlabel('Z (cm)')
         # Set limits for the x, y, and z axes
-        ax.set_xlim((-200, 200))
-        ax.set_zlim((-200, 200))
-        ax.set_ylim((000, -400))
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+        ax.set_zlim(zlim)
+
+        # set axes ticks
         ax.set_xticks(range(-200, 201, 100))
         ax.set_zticks(range(-200, 201, 100))
         ax.set_yticks(range(0, -401, -50))
 
-        # set axes ticks (DELED in milimeters)
-        # ax.set_xlabel('X (mm)')
-        # ax.set_ylabel('Y (mm)')
-        # ax.set_zlabel('Z (mm)')
-        # Set limits for the x, y, and z axes
-        # ax.set_xlim((0, 3000))
-        # ax.set_zlim((-2500, -500))
-        # ax.set_ylim((-1500, 1500))
-        # ax.set_xticks(range(-200, 201, 100))
-        # ax.set_zticks(range(-200, 201, 100))
-        # ax.set_yticks(range(0, -401, -50))
+        # Cameras pyramid FOV
+        for t_vec, r_mat in zip(self.T_vecs, self.R_mats):
+            rot = np.array(r_mat)
+            pos = np.array((-r_mat.transpose() * t_vec))
+            extrinsic = np.concatenate([np.concatenate([rot.T, pos], axis=1), np.array([[0, 0, 0, 1]])], axis=0)
 
-        # set cameras positions
-        # for i, camera in enumerate(camera_positions):
-        #     # Add the points to the plot
-        #     # ax.scatter(xs=camera[0, 0], ys=camera[0, 1], zs=camera[0, 2])  # single person
-        #     # panoptic
-        #     cc = (-camera.transpose() * camera_orientations[i])
-        #     ax.scatter(xs=cc[0, 0], ys=cc[0, 1], zs=cc[0, 2], marker='.', linewidths=6)
+            vertex_std = np.array(
+                [[0, 0, 0, 1],
+                 [focal_len_scaled * aspect_ratio, -focal_len_scaled * aspect_ratio, focal_len_scaled, 1],
+                 [focal_len_scaled * aspect_ratio, focal_len_scaled * aspect_ratio, focal_len_scaled, 1],
+                 [-focal_len_scaled * aspect_ratio, focal_len_scaled * aspect_ratio, focal_len_scaled, 1],
+                 [-focal_len_scaled * aspect_ratio, -focal_len_scaled * aspect_ratio, focal_len_scaled, 1]]
+            )
+            vertex_transformed = vertex_std @ extrinsic.T
 
+            meshes = [
+                [vertex_transformed[0, :-1], vertex_transformed[1, :-1], vertex_transformed[2, :-1]],
+                [vertex_transformed[0, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1]],
+                [vertex_transformed[0, :-1], vertex_transformed[3, :-1], vertex_transformed[4, :-1]],
+                [vertex_transformed[0, :-1], vertex_transformed[4, :-1], vertex_transformed[1, :-1]],
+                [vertex_transformed[1, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1],
+                 vertex_transformed[4, :-1]]
+            ]
+
+            ax.add_collection3d(
+                Poly3DCollection(meshes, facecolors=color, linewidths=0.3, edgecolors=color, alpha=0.35)
+            )
+
+        plt.tight_layout()
         return ax
 
     @staticmethod
     def update_3d_pose(pose_3d, axes):
 
+        # Removing old poses
         for artist in axes.lines:
             artist.remove()
 
+        # Plotting new poses
         connections_frozenset = mp.solutions.pose.POSE_CONNECTIONS
-        # Plotting lines
         for i, connection in enumerate(connections_frozenset):
             x = [pose_3d[connection[0], 0], pose_3d[connection[1], 0]]
             y = [pose_3d[connection[0], 1], pose_3d[connection[1], 1]]
@@ -267,20 +255,6 @@ class Pose3D:
             axes.plot(x, y, z, c=color, marker='.', markerfacecolor='black', markersize=5)
 
         plt.pause(0.00001)
-
-        # # Set labels for the axes
-        # ax.set_xlabel('Z')
-        # ax.set_ylabel('X')
-        # ax.set_zlabel('Y')
-
-        # Show the plot
-        # for connection in connections_frozenset:
-        #     print(i)
-        #     Axes3D.plot(xs, ys, *args, zdir='z', **kwargs)
-        #     ax.plot(xs=[kpts3d[_c[0], 1], kpts3d[_c[1], 1]],
-        #             ys=[kpts3d[_c[0], 0], kpts3d[_c[1], 0]],
-        #             zs=[kpts3d[_c[0], 2], kpts3d[_c[1], 2]],
-        #             linewidth=4, c=part_color)
 
 
 """
