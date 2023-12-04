@@ -5,9 +5,9 @@ import threading
 import time
 import cv2
 
-from Dataset.single_person.dataset_tests import get_all_camera_parameters
+# from Dataset.single_person.dataset_tests import get_all_camera_parameters
 from Dataset.Panoptic.panoptic_camera_parameters import get_panoptic_parameters
-from Dataset.DELED_RTSP_Cameras.Intrinsic_parameters import get_deled_intrinsics
+# from Dataset.DELED_RTSP_Cameras.Intrinsic_parameters import get_deled_intrinsics
 
 # print(cv2.getBuildInformation())
 
