@@ -1,12 +1,16 @@
 # 3D Human Pose MediaPipe
-**Multi-Camera Human Pose triangulation, with real-time 3D graph feedback.**
+> **Multi-Camera Human Pose triangulation, with real-time 3D graph feedback.**
+
 
 - Main program is multithreaded for performance increase in I/O bound operations, such as, concurrent image aquisition of all IP/RTSP cameras.
+
 
 - [MediaPipe Pose](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker), developed by Google, is used as the 2D Human Pose inference backbone.
 
   *MediaPipe Pose - landmark model*
+  
   ![MediaPipe Pose - landmark model](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/cc737d53-a247-4f00-8c1a-7e4a673b8db2)
+
 
 - The triangulation of all the detected poses are calculated using the DLT(Direct Linear Transform) method, making possible to minimize error with imperfect image captures.
 
@@ -17,16 +21,18 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 
 
 ## Results:
-- **Performance Statistics[^1]:**
-  - mean inference time:&emsp;&emsp;&nbsp;49.5 ms
-  - mean triangulation time:&ensp;0.67 ms
-  - mean 3d draw time:&emsp;&emsp;&ensp;&nbsp;93.4 ms
-  - mean frame time:&emsp;&emsp;&emsp;&ensp;&nbsp;93.8 ms
-  - mean FPS:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;10.6
-  - MPJPE (4 cameras):&emsp;&emsp;&emsp;&nbsp;50.8 mm (Mean Per Joint Position Error)
+
+| **Statistics (mean)**[^1] | **Measurement** |
+| --------------------- |:-----------:|
+| Inference             |  49.5 ms    |
+| Triangulation         |  0.67 ms    |
+| 3D graph              |  93.4 ms    |
+| Frametime             |  93.8 ms    |
+| FPS                   |  10.6       |
+| MPJPE (4 cameras)[^2] |  50.8 mm    |
 
 [^1]: Test Machine specification: Ryzen 7 3700X, 16 GB RAM 
-
+[^2]: Mean Per Joint Position Error
 
 - *Multiple perspective mosaic overlaid with inference pose*
 ![Multithread_multiview_2d_pose](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/f3533641-1146-4cf5-9a9d-ee9de5413e70)
