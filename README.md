@@ -1,6 +1,5 @@
 # 3D Human Pose MediaPipe
-> **Multi-Camera Human Pose triangulation, with real-time 3D graph feedback.**
-
+**Multi-Camera Human Pose triangulation, with real-time 3D graph feedback.**
 
 - Main program is multithreaded for performance increase in I/O bound operations, such as, concurrent image aquisition of all IP/RTSP cameras.
 
@@ -8,7 +7,7 @@
 - [MediaPipe Pose](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker), developed by Google, is used as the 2D Human Pose inference backbone.
 
   *MediaPipe Pose - landmark model*
-  
+
   ![MediaPipe Pose - landmark model](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/cc737d53-a247-4f00-8c1a-7e4a673b8db2)
 
 
@@ -22,17 +21,16 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 
 ## Results:
 
-| **Statistics (mean)**[^1] | **Measurement** |
-| --------------------- |:-----------:|
-| Inference time        |  49.5 ms    |
-| Triangulation time    |  0.67 ms    |
-| 3D graph time         |  93.4 ms    |
-| Frametime             |  93.8 ms    |
-| Frames per second     |  10.6 FPS   |
-| MPJPE (4 cameras)[^2] |  50.8 mm    |
+- **Performance Statistics[^1]:**
+  - mean inference time:&emsp;&emsp;&nbsp;49.5 ms
+  - mean triangulation time:&ensp;0.67 ms
+  - mean 3d draw time:&emsp;&emsp;&ensp;&nbsp;93.4 ms
+  - mean frame time:&emsp;&emsp;&emsp;&ensp;&nbsp;93.8 ms
+  - mean FPS:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;10.6
+  - MPJPE (4 cameras):&emsp;&emsp;&emsp;&nbsp;50.8 mm (Mean Per Joint Position Error)
 
 [^1]: Test Machine specification: Ryzen 7 3700X, 16 GB RAM 
-[^2]: Mean Per Joint Position Error
+
 
 - *Multiple perspective mosaic overlaid with inference pose*
 ![Multithread_multiview_2d_pose](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/f3533641-1146-4cf5-9a9d-ee9de5413e70)
@@ -45,3 +43,15 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 - *Dataset ground truth comparison for MPJPE calculation (green: CMU Panoptic, red: 3D Human Pose MediaPipe)*
 ![mediapipe vs panoptic GT](https://github.com/Yuri-Vlasqz/3D_Human_Pose_MediaPipe/assets/106136458/ce239b2a-0c71-4ef6-859b-b081271c1084)
 
+
+## Usage:
+
+Download dataset: [dataset link](http://domedb.perception.cs.cmu.edu/171026_pose3.html)
+
+Unpack hdVideos and calibration files in 'dataset/Panoptic/171026_pose3'
+
+`pip install -r requirements.txt`
+
+`python main_3d_human_pose.py`
+
+Any basic modifications can be made in the [inicialization.yaml](inicialization.yaml) file
