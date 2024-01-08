@@ -21,6 +21,7 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 
 ## Results:
 
+| **Statistics (mean)**[^1] | **Measurement** |
 | --------------------- |:-----------:|
 | Inference time        |  42.3 ms    |
 | Triangulation time    |  0.48 ms    |
@@ -29,6 +30,7 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 | Frames per second     |  10.8 FPS   |
 | MPJPE (4 cameras)[^2] |  50.8 mm    |
 [^1]: Test Machine specification: Ryzen 7 3700X, 16 GB RAM 
+[^2]: Mean Per Joint Position Error
 
 
 - *Multiple perspective mosaic overlaid with inference pose*
