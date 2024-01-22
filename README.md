@@ -1,7 +1,7 @@
 # 3D Human Pose MediaPipe
 **Multi-Camera Human Pose triangulation, with real-time 3D graph feedback.**
 
-- Main program is multithreaded for performance increase in I/O bound operations, such as, concurrent image aquisition of all IP/RTSP cameras.
+- Frame inference is multithreaded for performance increase in I/O bound operations, such as, concurrent image aquisition of all IP/RTSP cameras.
 
 
 - [MediaPipe Pose](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker), developed by Google, is used as the 2D Human Pose inference backbone.
@@ -23,11 +23,11 @@ CMU Panoptic datasets used for video feed testing in a controlled environment an
 
 | **Statistics (mean)**[^1] | **Measurement** |
 | --------------------- |:-----------:|
-| Inference time        |  42.3 ms    |
+| Inference time        |  40.8 ms    |
 | Triangulation time    |  0.48 ms    |
-| 3D graph time         |  85.4 ms    |
-| Frametime             |  92.6 ms    |
-| Frames per second     |  10.8 FPS   |
+| 3D graph time         |  76.5 ms    |
+| Frametime             |  90.4 ms    |
+| Frames per second     |  11.1 FPS   |
 | MPJPE (4 cameras)[^2] |  50.8 mm    |
 [^1]: Test Machine specification: Ryzen 7 3700X, 16 GB RAM 
 [^2]: Mean Per Joint Position Error
