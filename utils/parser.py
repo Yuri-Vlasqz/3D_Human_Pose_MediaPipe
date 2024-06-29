@@ -136,7 +136,7 @@ def body3dscene_extractor(
     poses = np.array(skels)
     frames = np.array(range(hd_idx_start, hd_idx_stop + 1))
     np.savez(
-        f'{output_path}/NEW_Panoptic_GT_{sequence_name}.npz',
+        f'{output_path}/Panoptic_GT_{sequence_name}.npz',
         frames=frames,  poses=poses
     )
     print(f"body3dscene files extracted in: /{output_path}/\n"
