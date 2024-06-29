@@ -31,14 +31,14 @@ Please refer to [Panoptic-Toolbox](https://github.com/CMU-Perceptual-Computing-L
 
 ## Results:
 
-- Multiple perspective mosaic overlaid with poses inference
+- Multiple perspective mosaic overlaid with poses inference.
 <h6 align="center">2D poses mosaic</h6>
 <p align="center">
   <img src="assets/gif_mediapipe_2d_pose_mosaic.gif">
 </p>
   
 
-- Real-time triangulated pose feedback (with cameras pyramidal field of view)
+- Real-time triangulated pose feedback (with cameras pyramidal field of view).
 <h6 align="center">3D pose and cameras pyramids</h6>
 <p align="center">
   <img src="assets/gif_mpl_3d_pose.gif">
@@ -46,7 +46,7 @@ Please refer to [Panoptic-Toolbox](https://github.com/CMU-Perceptual-Computing-L
 
 
 - Dataset ground truth and estimated pose comparison for MPJPE (Mean Per Joint Position Error) calculation.
-<h6 align="center">3D MediaPipe pose _(red)_ _vs_ Panoptic Ground Truth _(green)_</h6>
+<h6 align="center">3D MediaPipe pose (red) vs Panoptic Ground Truth (green)</h6>
 <p align="center">
   <img src="assets/gif_3d_mpjpe.gif">
 </p>
@@ -80,7 +80,7 @@ Please refer to [Panoptic-Toolbox](https://github.com/CMU-Perceptual-Computing-L
 
 > Cameras used: 0, 1, 3, 6, 13, 16, 21, 25, 30.
  
-> Test Machine specification: Ryzen 7 3700X, 16 GB RAM, Python 3.11.5
+> Test Machine specification: Ryzen 7 3700X, 16 GB RAM, Python 3.11.5.
 
 
 ## Installation:
@@ -92,7 +92,9 @@ _OBS:_ Smaller dataset sample ["171204_pose1_sample"](https://github.com/CMU-Per
 
 3. Place hdVideos and extract hdPose3d in [dataset/Panoptic/171026_pose3](dataset/Panoptic/171026_pose3)
 4. Install dependencies: `pip install -r requirements.txt`
-<h6 align="left">Dataset directory tree</h6>
+
+<h6 align="left">Dataset directory tree from 3D Human Pose MediaPipe root</h6>
+
 ```
 ${3D_Human_Pose_MediaPipe}
 ├─── dataset
@@ -114,11 +116,13 @@ ${3D_Human_Pose_MediaPipe}
 
 
 <h5>Main 3D pose aplication</h5>
+
 `python main_3d_human_pose.py`
 
 <h5>MPJPE 3D pose aplication</h5>
+
 `python mpjpe_evaluation.py`
 
-Cameras selection and basic modifications can be made in [inicialization.yaml](inicialization.yaml)
+Cameras selection and basic modifications can be made in [inicialization.yaml](inicialization.yaml).
 
 ![yaml preview](assets/Inicialization_yaml_preview.png)
