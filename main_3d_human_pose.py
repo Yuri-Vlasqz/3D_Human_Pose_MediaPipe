@@ -1,181 +1,192 @@
-import numpy as np
-import cv2
-
 import concurrent.futures as futures
-from copy import deepcopy
+import os
 import threading
 import time
+from copy import deepcopy
 
-from modules import PoseDetection, PoseTriangulation, StageSpace
-from models import CamerasParameters, MosaicStructure
-from utils import execution_time_report, yaml_parser, panoptic_parser
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
 
-# Multithread global variables
-pose_output_buffer = []
-inference_times = []
-
-
-def initialise(specs_path: str = "inicialization.yaml"):
-    """ Function to inicialise from specifications file"""
-
-    inicialization_specs = yaml_parser(specs_path)
-    feeds, img_res = inicialization_specs['feeds'].values()
-    tile_grid, tile_res = inicialization_specs['mosaic'].values()
-    text_variables = list(inicialization_specs['text'].values())
-
-    video_captures = [cv2.VideoCapture(feed) for feed in feeds]
-    # alternative: cv2.CAP_MSMF (videos only)
-    frame_count = video_captures[0].get(cv2.CAP_PROP_FRAME_COUNT)
-    # set the start time for recorded videos
-    # for cap in video_captures:
-    #     cap.set(cv2.CAP_PROP_POS_FRAMES, 7980)
-
-    mosaic_structure = MosaicStructure(len(feeds), tile_grid, tile_res)
-    pose_detection = [PoseDetection(img_res, 1, 0.8) for _ in feeds]
-
-    # Panoptic calibration parameters extraction
-    rotational_matrices, translation_vectors, camera_matrices, camera_distortions = panoptic_parser(
-        [0, 1, 6, 13]
-    )  # 0, 1, 6, 13, 16, 21
-    cameras_params = CamerasParameters(len(feeds),
-                                       camera_matrices,
-                                       rotational_matrices,
-                                       translation_vectors,
-                                       camera_distortions)
-    pose_triangulation = PoseTriangulation(cameras_params)
-    stage_space = StageSpace(cameras_params)
-
-    global pose_output_buffer
-    pose_output_buffer = [np.empty(0)] * len(feeds)
-
-    thread_barrier = threading.Barrier(len(feeds) + 1)
-    thread_lock = threading.Lock()
-
-    return (video_captures, mosaic_structure, pose_detection, pose_triangulation,
-            stage_space, thread_barrier, thread_lock, text_variables, frame_count)
+from models import MosaicStructure
+from modules import PoseDetection
+from utils import ThreadSpecificationLoader, execution_time_report
 
 
-def process_feed(feed: cv2.VideoCapture, pose_detector: PoseDetection, mosaic_structure: MosaicStructure,
-                 index: int, thread_lock: threading.Lock, thread_barrier: threading.Barrier):
-    """ Function to detect pose from calibrated camera feed """
+def process_feed(
+        feed: cv2.VideoCapture,
+        pose_detector: PoseDetection,
+        poses_buffer: list[np.ndarray],
+        mosaic_structure: MosaicStructure,
+        index: int, camera_id: int,
+        inference_times: list,
+        thread_lock: threading.Lock,
+        thread_barrier: threading.Barrier
+) -> None:
+    """ Function to detect and overlay pose from calibrated camera feed """
 
-    global pose_output_buffer
-    global inference_times
-    frame_height, frame_width = mosaic_structure.tile_resolution
+    tile_height, tile_width = mosaic_structure.tile_resolution
+    inference_times_buffer: list[float] = []
 
     # | Detection thread Loop |
     while True:
         ret, frame = feed.read()
-
         if not ret:
             try:
                 thread_barrier.wait()
+                continue  # skip to next frame
             except threading.BrokenBarrierError:  # Stop of thread
                 break
-            continue  # skip to next frame
-
-        # if distorted_feed:
-        #     # Undistort alpha = 0
-        #     frame = cv2.undistort(frame, dist_cam_mat, dist_coeffs, None, undistorted_cam_mat)
-
-        inference_start = time.time()
+        # if distorted_feed:  # Undistort alpha = 0
+        #     frame = cv2.undistort(
+        #         frame, dist_cam_mat, dist_coeffs, None, undistorted_cam_mat
+        #     )
+        # Resize downsampling interpolation:
+        # cv2.INTER_NEAREST -> fastest but less precise
+        # cv2.INTER_LINEAR  -> fast & precise (default)
+        # cv2.INTER_AREA    -> slow with best precision
+        frame = cv2.resize(
+            frame, (tile_width, tile_height), interpolation=cv2.INTER_AREA
+        )
+        inference_start = time.perf_counter()
         landmarks = pose_detector.detect_landmarks(frame)
-        inference_stop = time.time()
-
-        frame = cv2.resize(frame, (frame_width, frame_height), interpolation=cv2.INTER_NEAREST)
+        inference_times_buffer.append(time.perf_counter() - inference_start)
         overlay = pose_detector.overlay_landmarks(frame)
 
         with thread_lock:
-            pose_output_buffer[index] = landmarks
-            inference_times.append(inference_stop - inference_start)
-            mosaic_structure.insert_tile_content(index, overlay)
-
+            poses_buffer[index] = landmarks
+            mosaic_structure.insert_tile_content(
+                index, overlay, f"Camera {camera_id}"
+            )
         try:
             thread_barrier.wait()
         except threading.BrokenBarrierError:  # Stop of thread
             break
 
-    if not ret:  # first to end feed
-        with thread_lock:
-            print(f"Feed {index} ended")
-        thread_barrier.abort()
     feed.release()
+    with thread_lock:
+        print(f"- Feed {index + 1} stopped")
+        inference_times.extend(inference_times_buffer)
 
 
-def main():
-    (captures, mosaic,
-     pose_detectors, pose_triangulator,
-     stage_vizualiser,
-     sync_barrier, sync_lock,
-     TEXT, FRAME_COUNT) = initialise()
+def main() -> None:
+    """
+    The main function that runs the MultiThreaded 3D Human Pose Estimation application.
 
-    global pose_output_buffer
-    global inference_times
+    This function loads specifications from "inicialization.yaml", starts the pose
+    detection thread pool, performs triangulation and visualize the best 3D pose.
+
+    **OBS**: All thread loops runs continuously until all feeds have ended or
+    the user presses 'q'. A performance report is printed before exiting.
+    """
+    specs = ThreadSpecificationLoader("inicialization.yaml")
+    print(specs)
+
+    barrier_wait_times: list[float] = []
+    inference_times: list[float] = []
+    triangulation_times: list[float] = []
+    draw_times: list[float] = []
+    mosaic_times: list[float] = []
+    all_3d_poses: list[np.ndarray] = []
+    current_3d_pose: np.ndarray = np.zeros((33, 3))
+    current_frame = 0
+    max_frame = specs.frame_count
 
     # Pose detection thread pool
     with futures.ThreadPoolExecutor() as executor:
-        print("\nInitializing feed processing threads:")
-        for i, cap in enumerate(captures):
-            executor.submit(process_feed, cap, pose_detectors[i], mosaic, i, sync_lock, sync_barrier)
-            print(f"- Thread {i}: {pose_detectors[i]}")
+        print("Initializing inference threads:")
+        for i, cap in enumerate(specs.video_captures):
+            executor.submit(
+                process_feed, cap,
+                specs.pose_detectors[i],
+                specs.pose_buffers,
+                specs.mosaic_structure,
+                i, specs.cameras_idx[i],
+                inference_times,
+                specs.thread_lock,
+                specs.thread_barrier,
+            )
+            print(f"- Thread {i + 1}: {specs.pose_detectors[i]}")
 
-        triangulation_times = []
-        draw_times = []
-        mosaic_times = []
-        start_mosaic_time = time.time()
+        print("\nRunning")
+        start_mosaic_time = time.perf_counter()
 
         # | Main thread loop |
         while True:
-
             try:
-                # Wait all threads
-                sync_barrier.wait()
-                with sync_lock:
-                    pose_output = deepcopy(pose_output_buffer)
+                start = time.perf_counter()
+                specs.thread_barrier.wait()  # Wait all threads
+                barrier_wait_times.append(time.perf_counter() - start)
+
+                with specs.thread_lock:
+                    poses_output = deepcopy(specs.pose_buffers)
 
             except threading.BrokenBarrierError:  # Stop of thread
                 break
 
-            num_poses = sum([1 for arr in pose_output if arr.size > 0])
+            num_poses = sum([1 for arr in poses_output if arr.size])
             if num_poses >= 2:
-                start = time.time()
-                best_3d_pose = pose_triangulator.triangulate_best_landmarks(pose_output)
-                stop = time.time()
-                triangulation_times.append(stop - start)
+                start = time.perf_counter()
+                current_3d_pose = specs.pose_triangulator.triangulate_landmarks(
+                    poses_output, method=specs.triangulation_method
+                )  # methods: 'mean', 'weighted', 'sqr_weighted', 'best'
+                triangulation_times.append(time.perf_counter() - start)
 
-                start = time.time()
-                stage_vizualiser.update_3d_pose(best_3d_pose)
-                stop = time.time()
-                draw_times.append(stop - start)
+                start = time.perf_counter()
+                specs.pose_visualizer.update_3d_pose(current_3d_pose)
+                draw_times.append(time.perf_counter() - start)
 
-            stop_mosaic_time = time.time()
-            mosaic_fps = 1 / (stop_mosaic_time - start_mosaic_time)
-            cv2.putText(mosaic.mosaic_content, f"FPS: {mosaic_fps:.0f}", (5, 20),
-                        TEXT[0], TEXT[1], TEXT[2], TEXT[3], TEXT[4])
+            all_3d_poses.append(current_3d_pose)
+
+            stop_mosaic_time = time.perf_counter()
             mosaic_times.append(stop_mosaic_time - start_mosaic_time)
+            if not current_frame % 5:
+                mosaic_fps = 1 / (stop_mosaic_time - start_mosaic_time)
             start_mosaic_time = stop_mosaic_time
 
-            # Display the frame
-            cv2.imshow('MediaPipe Human Pose-3D', mosaic.mosaic_content)
-
-            if captures[0].get(cv2.CAP_PROP_POS_FRAMES) == FRAME_COUNT:
+            cv2.putText(
+                specs.mosaic_structure.mosaic_content, f"FPS: {mosaic_fps:.0f}",
+                (5, 25), specs.text['font'], specs.text['size'], specs.text['color'],
+                specs.text['thickness'], specs.text['line_type']
+            )
+            # Display Mosaic
+            cv2.imshow(
+                winname='MediaPipe Human Pose',
+                mat=specs.mosaic_structure.mosaic_content
+            )
+            if cv2.waitKey(1) & 0xFF == ord('q') or current_frame == max_frame:
                 break
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
 
+            current_frame += 1
 
         # Stop threads
-        sync_barrier.abort()
+        specs.thread_barrier.abort()
 
-    # Close Mosaic window
+    # Close Mosaic and 3D Pose window
     cv2.destroyAllWindows()
-    # inference_times, triangulation_times, draw_times, mosaic_times = main()
+    plt.close('all')
 
     print("\n| Performance report |\n")
-    execution_time_report(inference_times, "Inference time", tails=False)
-    execution_time_report(triangulation_times, "Triangulation time", tails=False)
-    execution_time_report(draw_times, "3D draw time", tails=False)
-    execution_time_report(mosaic_times, "Mosaic time", tails=False)
+    execution_time_report(barrier_wait_times[1:], "Barrier wait time")
+    execution_time_report(inference_times, "Inference time")
+    execution_time_report(triangulation_times, "Triangulation time")
+    execution_time_report(draw_times, "3D draw time")
+    execution_time_report(mosaic_times[1:], "Mosaic time")
+
+    hd_pose3d_path = 'dataset/Panoptic/'+specs.sequence_name+'/hdPose3d_stage1_coco19/'
+    files_list = os.listdir(hd_pose3d_path)
+    idx_stop = int(files_list[-1][12:20])  # 171026_pose3: 129-7309
+    if len(all_3d_poses) > idx_stop:
+        is_sure: bool = input(
+            f'Save {len(all_3d_poses)} poses? (y/n): '
+        ).lower().strip() == 'y'
+        if is_sure:
+            output_file_path = (
+                f"pose_output/NEW_MP_poses_{specs.sequence_name}_{len(specs)}_cams_"
+                f"model_{specs.pose_model}_method_{specs.triangulation_method}.npy"
+            )
+            np.save(output_file_path, np.array(all_3d_poses))
+            print(f"All Poses Saved!\nShape:{np.load(output_file_path).shape}")
 
 
 if __name__ == "__main__":

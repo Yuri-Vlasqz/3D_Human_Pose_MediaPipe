@@ -1,3 +1,3 @@
-from .pose_detection import PoseDetection
+from .pose_detection import POSE_CONNECTIONS, PoseDetection
 from .pose_triangulation import PoseTriangulation
-from .stage_vizualizer import StageSpace
+from .pose_visualization import PoseVisualization
