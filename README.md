@@ -1,5 +1,5 @@
 # 3D Human Pose MediaPipe
-**Multi-Camera Human Pose triangulation, with real-time 3D graph feedback.**
+**Multi-Camera Markerless Human Pose triangulation, with real-time 3D graph feedback.**
 
 ## How it works?
 - Each camera feed processing is multithreaded for performance increase in I/O bound and blocking operations, such as, 
@@ -115,11 +115,11 @@ ${3D_Human_Pose_MediaPipe}
 ## Usage:
 
 
-<h5>Main 3D pose aplication</h5>
+<h5>Main 3D pose application</h5>
 
 `python main_3d_human_pose.py`
 
-<h5>MPJPE 3D pose aplication</h5>
+<h5>MPJPE 3D pose application</h5>
 
 `python mpjpe_evaluation.py`
 
