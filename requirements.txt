@@ -1,6 +1,7 @@
+keyboard==0.13.5
 matplotlib==3.8.2
 mediapipe==0.10.9
 numpy==1.26.3
 opencv-contrib-python==4.9.0.80
-pyyaml==6.0.1
-keyboard~=0.13.5
+PyQt5==5.15.10
+PyYAML==6.0.1
