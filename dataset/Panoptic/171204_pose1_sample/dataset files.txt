@@ -1,0 +1,2 @@
+# After downloading from panoptic toolbox unpack compressed files:
+# hdPose3d_stage1_coco19, hdVideos & calibration_171204_pose1_sample.json

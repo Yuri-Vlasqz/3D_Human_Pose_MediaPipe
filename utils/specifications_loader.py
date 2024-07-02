@@ -36,20 +36,23 @@ class ThreadSpecificationLoader:
         directory, videos, img_res = yaml_specs['feeds'].values()
         tile_grid, tile_res = yaml_specs['mosaic'].values()
         model, visibility, triangulation_method = yaml_specs['pose_landmarker'].values()
+
+        sequence_name = directory.split(sep='/')[-3]
         number_of_feeds = len(videos)
         cameras_idx = [int(video[-6:-4]) for video in videos]  # hd_00_xx.mp4
         # new test -> 0, 1, 3, 6, 13, 16, 21, 25, 30
+        
         (rotational_matrices,
          translation_vectors,
          camera_matrices,
-         camera_distortions) = panoptic_parser(cameras_idx)
+         camera_distortions) = panoptic_parser(cameras_idx, sequence_name=sequence_name)
         cameras_params = CamerasParameters(number_of_feeds,
                                            camera_matrices,
                                            rotational_matrices,
                                            translation_vectors,
                                            camera_distortions)
 
-        self.sequence_name = directory.split('/')[2]
+        self.sequence_name = sequence_name
         self.cameras_idx = cameras_idx
         self.pose_model = model
         self.triangulation_method = triangulation_method
