@@ -54,6 +54,6 @@ def mpjpe_evaluation(
 
 if __name__ == "__main__":
     body3dscene_extractor(sequence_name='171026_pose3')  # Extract sequence GT
-    mpjpe_evaluation(camera_number=4, model=1, method='sqr_weighted', plot_mpjpe=False)
+    mpjpe_evaluation(camera_number=9, model=1, method='sqr_weighted', plot_mpjpe=True)
     # mean mpjpe draw time: ~45 ms
     # mean FPS: ~22
