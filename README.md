@@ -3,8 +3,33 @@
 
 ## How it works?
 - Each camera feed processing is multithreaded for performance increase in I/O bound and blocking operations, such as, 
-concurrent image aquisition of videos/cameras and 2D pose inference, while main thread performs triangulation and 3D plotting.
+concurrent image acquisition of videos/cameras and 2D pose inferences, while main thread performs triangulation and 3D plotting.
 
+<h6 align="center">Main and feed threads Diagram</h6>
+
+```mermaid
+flowchart LR
+ subgraph subGraph0["Main thread"]
+        A{"Wait for Threads Barriers"}
+        B("DLT Triangulation")
+        C("Update 3D pose<br>&amp; mosaic")
+  end
+ subgraph subGraph1["Feed Thread"]
+        A1{"Frame acquisition"}
+        B1("Frame Inference")
+        C1("Thread Barrier")
+  end
+    A ==> B
+    B ==> C
+    C == Next poses ==> A
+    A1 ==> B1
+    B1 ==> C1
+    C1 == Next frame ==> A1
+    B1 -. Buffer 2D poses<br>landmarkds &amp; overlays .-> A
+    C1 <-. Sync .-> A
+    style subGraph0 fill:#424242,stroke:#757575
+    style subGraph1 fill:#424242,stroke:#757575
+```
 
 - [MediaPipe Pose](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker), 
 developed by Google, is used as the 2D Human Pose inference backbone.
