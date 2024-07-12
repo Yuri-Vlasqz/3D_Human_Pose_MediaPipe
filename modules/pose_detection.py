@@ -71,14 +71,13 @@ class PoseDetection:
         :param image: Input image in BGR format.
         :return: Image with overlaid pose landmarks.
         """
-        if self.results.pose_landmarks:
-            draw_landmarks(
-                image=image,
-                landmark_list=self.results.pose_landmarks,
-                connections=POSE_CONNECTIONS,
-                landmark_drawing_spec=drawing_spec(color=BLUE, thickness=1, circle_radius=1),
-                connection_drawing_spec=drawing_spec(color=RED, thickness=1),
-            )
+        draw_landmarks(
+            image=image,
+            landmark_list=self.results.pose_landmarks,
+            connections=POSE_CONNECTIONS,
+            landmark_drawing_spec=drawing_spec(color=BLUE, thickness=1, circle_radius=1),
+            connection_drawing_spec=drawing_spec(color=RED, thickness=2),
+        )
         return image
 
 

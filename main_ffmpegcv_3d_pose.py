@@ -5,16 +5,17 @@ import time
 from copy import deepcopy
 
 import cv2
+import ffmpegcv
 import numpy as np
 from matplotlib import pyplot as plt
 
 from models import MosaicStructure
 from modules import PoseDetection
-from utils import ThreadSpecificationLoader, execution_time_report
+from utils import FfmpegcvSpecificationLoader, execution_time_report
 
 
 def process_feed(
-        feed: cv2.VideoCapture,
+        feed: ffmpegcv.ffmpeg_reader.FFmpegReaderNV,
         pose_detector: PoseDetection,
         poses_buffer: list[np.ndarray],
         mosaic_structure: MosaicStructure,
@@ -27,7 +28,7 @@ def process_feed(
 
     tile_height, tile_width = mosaic_structure.tile_resolution
     inference_times_buffer: list[float] = []
-
+    tile_frame = 0
     # | Detection thread Loop |
     while True:
         ret, frame = feed.read()
@@ -41,23 +42,19 @@ def process_feed(
         #     frame = cv2.undistort(
         #         frame, dist_cam_mat, dist_coeffs, None, undistorted_cam_mat
         #     )
-        # Resize downsampling interpolation:
-        # cv2.INTER_NEAREST -> 0.48ms <- fastest  but less precise
-        # cv2.INTER_LINEAR  -> 0.60ms <- fast & precise (default)
-        # cv2.INTER_AREA    -> 1.73ms <- slow with best precision
-        frame = cv2.resize(
-            frame, (tile_width, tile_height), interpolation=cv2.INTER_AREA
-        )
+        frame = np.array(frame)
         inference_start = time.perf_counter()
         landmarks = pose_detector.detect_landmarks(frame)
-        overlay = pose_detector.overlay_landmarks(frame)
         inference_times_buffer.append(time.perf_counter() - inference_start)
+        overlay = pose_detector.overlay_landmarks(frame)
 
         with thread_lock:
             poses_buffer[index] = landmarks
             mosaic_structure.insert_tile_content(
                 index, overlay, f"Camera {camera_id}"
             )
+
+        tile_frame += 1
         try:
             thread_barrier.wait()
         except threading.BrokenBarrierError:  # Stop of thread
@@ -79,7 +76,8 @@ def main() -> None:
     **OBS**: All thread loops runs continuously until all feeds have ended or
     the user presses 'q'. A performance report is printed before exiting.
     """
-    specs = ThreadSpecificationLoader("inicialization.yaml")
+    print("Nvidia gpu:", ffmpegcv.get_num_NVIDIA_GPUs())
+    specs = FfmpegcvSpecificationLoader("inicialization.yaml")
     print(specs)
 
     barrier_wait_times: list[float] = []
@@ -173,7 +171,7 @@ def main() -> None:
     execution_time_report(draw_times, "3D draw time")
     execution_time_report(mosaic_times[1:], "Mosaic time")
 
-    hd_pose3d_path = 'dataset/Panoptic/'+specs.sequence_name+'/hdPose3d_stage1_coco19/'
+    hd_pose3d_path = 'dataset/Panoptic/' + specs.sequence_name + '/hdPose3d_stage1_coco19/'
     files_list = os.listdir(hd_pose3d_path)
     idx_stop = int(files_list[-1][12:20])  # 171026_pose3: 129-7309
     if len(all_3d_poses) > idx_stop:
