@@ -39,7 +39,7 @@ developed by Google, is used as the 2D Human Pose inference backbone.
 </p>
 
 
-- The [triangulation](https://youtu.be/nRVuLFQ_Bng) of all the detected poses pairs are calculated using the DLT(Direct Linear Transform) method, making possible to minimize error with imperfect image captures.
+- The [triangulation](https://youtu.be/nRVuLFQ_Bng) of all the detected poses pairs are calculated using the DLT ([Direct Linear Transform](https://www.cs.cmu.edu/~16385/s17/Slides/11.4_Triangulation.pdf)) method, making possible to minimize error with imperfect image captures.
 <h6 align="center">2D planes to 3D space triangulation</h6>
 <p align="center">
   <img src="assets/cameras_and_the_direct_linear_transform.png">
